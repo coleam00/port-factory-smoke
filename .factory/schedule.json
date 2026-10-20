@@ -1,0 +1,9 @@
+{
+  "workflow": "archon-loop",
+  "parallel": 2,
+  "inputs": {
+    "runtime": "/c/Users/colem/OpenSource/port-smoke/private/baseline.json describes how to run the app from a checkout: its environment block gives the start and teardown commands and how to find the port the app serves on, and its assertions say what must hold.",
+    "holdout": "/c/Users/colem/OpenSource/port-smoke/holdout/holdout.md",
+    "merge": "auto"
+  }
+}
