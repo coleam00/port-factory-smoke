@@ -178,6 +178,35 @@ class ServiceTests(unittest.TestCase):
                 with self.subTest(path=path):
                     self.assertEqual(request(port, path)[0], 400)
 
+    def test_repeated_titles_preserve_both_snippets_after_restart(self):
+        with tempfile.TemporaryDirectory() as directory:
+            database = Path(directory) / "snippets.sqlite"
+            with running_service(database=database) as port:
+                first = self.create_snippet(port, "Notes", "lamp first")
+                second = self.create_snippet(port, "Notes", "lamp second")
+                self.assertNotEqual(first["id"], second["id"])
+                self.assert_search(port, "Notes lamp", [second, first])
+            with running_service(database=database) as port:
+                self.assert_search(port, "Notes lamp", [second, first])
+
+    def test_creation_rejects_unpaired_surrogates_in_either_field(self):
+        with running_service() as port:
+            for field in ("title", "body"):
+                for surrogate in ("\ud800", "\udfff"):
+                    with self.subTest(field=field, surrogate=repr(surrogate)):
+                        payload = {"title": "Notes", "body": "lamp"}
+                        payload[field] += surrogate
+                        status, headers, body = request(
+                            port, "/snippets", "POST", json.dumps(payload),
+                        )
+                        self.assertEqual(status, 400)
+                        self.assertEqual(headers["Content-Type"], "application/json; charset=utf-8")
+                        self.assertIn("error", json.loads(body))
+            self.assert_search(port, "Notes", [])
+            self.assert_search(port, "lamp", [])
+            snippet = self.create_snippet(port, "Notes \U0001f4a1", "lamp \U0001f4a1")
+            self.assert_search(port, "\U0001f4a1", [snippet])
+
     def test_search_matches_literal_substrings_and_unicode_case(self):
         with running_service() as port:
             self.assert_search(port, "anything", [])

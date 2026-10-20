@@ -67,6 +67,12 @@ class Handler(BaseHTTPRequestHandler):
         ):
             self.respond_json(400, {"error": "title and body must be strings"})
             return
+        try:
+            payload["title"].encode("utf-8")
+            payload["body"].encode("utf-8")
+        except UnicodeEncodeError:
+            self.respond_json(400, {"error": "title and body must be valid Unicode"})
+            return
         snippet_id = self.server.snippets.create(payload["title"], payload["body"])
         self.respond_json(201, {"id": snippet_id})
 
