@@ -24,7 +24,7 @@ class Snippets:
             connection.row_factory = sqlite3.Row
             matches = []
             for row in connection.execute(
-                "SELECT id, title, body FROM snippets ORDER BY id DESC"
+                "SELECT id, title, body FROM snippets ORDER BY id ASC"
             ):
                 title, body = row["title"].casefold(), row["body"].casefold()
                 if all(word in title or word in body for word in words):
