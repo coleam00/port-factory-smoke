@@ -1,6 +1,7 @@
 # Reports the result of every CI run on main to Port, so the repo's
-# "CI passing on main" scorecard rule updates live (Port gets no GitHub
-# webhooks for personal accounts). Owner-managed Port wiring, not app code.
+# "CI passing on main" scorecard rule updates live, then asks Port to resync
+# (Port gets no GitHub webhooks for personal accounts). Owner-managed Port
+# wiring, not app code.
 name: port-ci-status
 on:
   workflow_run:
@@ -33,4 +34,11 @@ jobs:
           call(f"https://api.port.io/v1/blueprints/githubRepository/entities/{repo}",
                {"properties": {"ci_main_status": conclusion}}, token)
           print(f"Reported {conclusion} for {repo} to Port")
+          # Personal GitHub accounts get no live events in Port, so refresh the
+          # files, PRs and scorecard inputs after every CI run on main.
+          req = urllib.request.Request("https://api.port.io/v1/integration/github-ocean/resync", b"{}", method="POST")
+          req.add_header("Content-Type", "application/json")
+          req.add_header("Authorization", "Bearer " + token)
+          urllib.request.urlopen(req)
+          print("Requested a Port resync")
           PY
